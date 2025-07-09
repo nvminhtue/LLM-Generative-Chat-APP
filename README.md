@@ -41,6 +41,10 @@ You can start editing the chat interface by modifying `app/llm/page.tsx`. The pa
 - **Markdown Support**: Rich text rendering for AI responses
 - **Real-time Streaming**: Stream responses from LLM for better user experience
 
+## App Overview
+
+![AI Assistant Interface](./public/preview.png)
+
 ## Project Structure
 
 - `/src/app/llm/` - Main chat interface and components
