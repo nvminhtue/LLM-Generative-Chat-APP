@@ -1,22 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hotel LLM - Generative Chat App
+
+This is an LLM Generative Chat App built with [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Prerequisites
+
+This project uses:
+- **pnpm** as the package manager
+- **tool-versions** for version management (make sure you have asdf or similar tool installed)
 
 ## Getting Started
 
-First, run the development server:
+First, ensure you have the correct Node.js version installed:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# If using asdf
+asdf install
+
+# Or check .tool-versions for the required versions
+```
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Then, run the development server:
+
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+You can start editing the chat interface by modifying `app/llm/page.tsx`. The page auto-updates as you edit the file.
+
+## Features
+
+- **LLM Chat Interface**: Interactive chat interface for communicating with language models
+- **Markdown Support**: Rich text rendering for AI responses
+- **Real-time Streaming**: Stream responses from LLM for better user experience
+
+## Project Structure
+
+- `/src/app/llm/` - Main chat interface and components
+- `/src/app/api/chat-llm/` - API routes for LLM communication
+- `/src/api/` - Additional API utilities
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
