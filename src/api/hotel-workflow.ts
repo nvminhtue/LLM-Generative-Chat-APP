@@ -1,4 +1,4 @@
-import { StateGraph, START, END } from "@langchain/langgraph";
+// Removed StateGraph import - using simplified workflow
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { WorkflowState, HotelSearchQuery, HotelRoom } from './types';
@@ -43,7 +43,14 @@ async function parseQuery(state: WorkflowState): Promise<Partial<WorkflowState>>
   ]);
 
   try {
-    const parsed = JSON.parse(response.content as string);
+    // Extract JSON from markdown code blocks if present
+    let jsonString = response.content as string;
+    const jsonMatch = jsonString.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+    if (jsonMatch) {
+      jsonString = jsonMatch[1];
+    }
+    
+    const parsed = JSON.parse(jsonString.trim());
     
     if (parsed.needsClarification) {
       return {
@@ -162,38 +169,34 @@ Provide your analysis and recommendation.`;
   };
 }
 
-// Create the workflow graph
-const workflow = new StateGraph<WorkflowState>({
-  channels: {
-    query: null,
-    searchResults: null,
-    cheapestOption: null,
-    analysis: null,
-    error: null
-  }
-});
-
-// Add nodes
-workflow.addNode("parseQuery", parseQuery);
-workflow.addNode("searchHotels", searchHotels);
-workflow.addNode("analyzeAndSelect", analyzeAndSelectCheapest);
-
-// Add edges
-workflow.addEdge(START, "parseQuery");
-workflow.addConditionalEdges(
-  "parseQuery",
-  (state: WorkflowState) => {
+// Create a simplified workflow execution function
+export const hotelWorkflow = {
+  async invoke(initialState: WorkflowState): Promise<WorkflowState> {
+    let state = { ...initialState };
+    
+    // Step 1: Parse Query
+    const parseResult = await parseQuery(state);
+    state = { ...state, ...parseResult };
+    
     if (state.error) {
-      return END;
+      return state;
     }
-    return "searchHotels";
+    
+    // Step 2: Search Hotels
+    const searchResult = await searchHotels(state);
+    state = { ...state, ...searchResult };
+    
+    if (state.error) {
+      return state;
+    }
+    
+    // Step 3: Analyze and Select
+    const analyzeResult = await analyzeAndSelectCheapest(state);
+    state = { ...state, ...analyzeResult };
+    
+    return state;
   }
-);
-workflow.addEdge("searchHotels", "analyzeAndSelect");
-workflow.addEdge("analyzeAndSelect", END);
-
-// Compile the workflow
-export const hotelWorkflow = workflow.compile();
+};
 
 // Helper function to run the workflow
 export async function findCheapestHotel(userQuery: string): Promise<WorkflowState> {
