@@ -1,70 +1,108 @@
-import { GoogleGenAI } from "@google/genai";
+import { findCheapestHotel } from "../../../api/hotel-workflow";
 
 const NEWLINE = "$NEWLINE$";
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 
 // should be declared (!)
 export const dynamic = "force-dynamic";
 
-export const GET = async (request: Request) => {
+export const POST = async (request: Request) => {
   let responseStream = new TransformStream();
   const writer = responseStream.writable.getWriter();
   const encoder = new TextEncoder();
 
-  // const completion = await ai.chat.completions.create({
-  //   model: "gpt-3.5-turbo",
-  //   messages: [
-  //     { role: "system", content: "You are a helpful assistant." },
-  //     {
-  //       role: "user",
-  //       content: MARKDOWN_PROMPT,
-  //     },
-  //   ],
-  //   stream: true,
-  // });
-  const completion = await ai.models.generateContentStream({
-    model: 'gemini-2.0-flash-001',
-    // contents: [
-    //   {
-    //     role: 'system',
-    //     parts: [
-    //       {
-    //         text: 'You are a helpful assistant.'
-    //       }
-    //     ]
-    //   },
-    //   {
-    //     role: "user",
-    //     parts: [
-    //       {
-    //         text: MARKDOWN_PROMPT
-    //       }
-    //     ]
-    //   }
-    // ]
-    contents: 'give me some well known hotel booking platforms'
-  });
+  try {
+    const body = await request.json();
+    const userQuery = body.query || "Find me a cheap hotel for tonight";
 
-  (async () => {
-    for await (const chunk of completion) {
-      const content = chunk.text;
-      if (content !== undefined && content !== null) {
-        // avoid newlines getting messed up
-        const contentWithNewlines = content.replace(/\n/g, NEWLINE);
+    // Start the workflow execution
+    (async () => {
+      try {
         await writer.write(
-          encoder.encode(`event: token\ndata: ${contentWithNewlines}\n\n`)
+          encoder.encode(`event: token\ndata: 🔍 Processing your hotel search request...${NEWLINE}${NEWLINE}\n\n`)
         );
-      }
-    }
 
-    await writer.write(encoder.encode(`event: finished\ndata: true\n\n`));
-    await writer.close();
-  })();
-  return new Response(responseStream.readable, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-    },
-  });
+        const result = await findCheapestHotel(userQuery);
+
+        if (result.error) {
+          await writer.write(
+            encoder.encode(`event: token\ndata: ❌ Error: ${result.error}${NEWLINE}\n\n`)
+          );
+        } else {
+          // Stream the analysis
+          const analysisLines = result.analysis.split('\n');
+          for (const line of analysisLines) {
+            if (line.trim()) {
+              await writer.write(
+                encoder.encode(`event: token\ndata: ${line.replace(/\n/g, NEWLINE)}${NEWLINE}\n\n`)
+              );
+              // Small delay for better streaming effect
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }
+
+          // Add cheapest option details if available
+          if (result.cheapestOption) {
+            await writer.write(
+              encoder.encode(`event: token\ndata: ${NEWLINE}## 🏆 Recommended Option${NEWLINE}${NEWLINE}\n\n`)
+            );
+            
+            const details = [
+              `**${result.cheapestOption.hotelName}**`,
+              `Room Type: ${result.cheapestOption.roomType}`,
+              `💰 Price: $${result.cheapestOption.price} per night`,
+              `📍 Location: ${result.cheapestOption.location}`,
+              `⭐ Rating: ${result.cheapestOption.rating}/5`,
+              `🏢 Provider: ${result.cheapestOption.provider}`,
+              ``,
+              `**Amenities:**`,
+              ...result.cheapestOption.amenities.map(amenity => `- ${amenity}`),
+              ``,
+              `*${result.cheapestOption.description}*`
+            ];
+
+            for (const detail of details) {
+              await writer.write(
+                encoder.encode(`event: token\ndata: ${detail}${NEWLINE}\n\n`)
+              );
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+          }
+        }
+
+        await writer.write(encoder.encode(`event: finished\ndata: true\n\n`));
+        await writer.close();
+      } catch (error) {
+        console.error('Workflow execution error:', error);
+        await writer.write(
+          encoder.encode(`event: token\ndata: ❌ An error occurred while processing your request. Please try again.${NEWLINE}\n\n`)
+        );
+        await writer.write(encoder.encode(`event: finished\ndata: true\n\n`));
+        await writer.close();
+      }
+    })();
+
+    return new Response(responseStream.readable, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
+  } catch (error) {
+    console.error('API error:', error);
+    return new Response(
+      JSON.stringify({ error: "Failed to process request" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+};
+
+// Keep the GET method for backward compatibility
+export const GET = async (request: Request) => {
+  return POST(request);
 };
