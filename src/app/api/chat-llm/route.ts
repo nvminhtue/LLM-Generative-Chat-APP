@@ -117,8 +117,3 @@ export const POST = async (request: Request) => {
     );
   }
 };
-
-// Keep the GET method for backward compatibility
-export const GET = async (request: Request) => {
-  return POST(request);
-};
