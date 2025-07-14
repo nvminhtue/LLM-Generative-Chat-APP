@@ -7,7 +7,7 @@ const NEWLINE = "$NEWLINE$";
 export const dynamic = "force-dynamic";
 
 export const POST = async (request: Request) => {
-  let responseStream = new TransformStream();
+  const responseStream = new TransformStream();
   const writer = responseStream.writable.getWriter();
   const encoder = new TextEncoder();
 

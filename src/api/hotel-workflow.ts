@@ -97,7 +97,7 @@ async function parseQuery(
       analysis: `Searching for hotels in ${parsed.destination} from ${checkIn} to ${checkOut} for ${guests} guests in ${rooms} room(s)`,
       conversationHistory: state.conversationHistory,
     };
-  } catch (error) {
+  } catch {
     const newConversationHistory = [
       ...state.conversationHistory,
       { role: 'assistant' as const, content: "Could not parse your hotel search request. Please provide destination, dates, and number of guests.", timestamp: new Date() }
@@ -135,7 +135,7 @@ async function searchHotels(
         0
       )} hotels across ${searchResults.length} providers`,
     };
-  } catch (error) {
+  } catch {
     return {
       error: "Failed to search hotel providers",
       analysis: "Hotel search failed",

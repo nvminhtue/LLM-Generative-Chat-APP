@@ -8,6 +8,7 @@ interface ChatState {
   isStreamFinished: boolean;
   isLoading: boolean;
   conversationHistory: ChatMessage[];
+  currentStreamingMessage: string;
   needsUserInput: boolean;
   conversationComplete: boolean;
   hasResults: boolean;
@@ -28,6 +29,7 @@ export const useChat = (): UseChatReturn => {
   const [isStreamFinished, setIsStreamFinished] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [conversationHistory, setConversationHistory] = useState<ChatMessage[]>([]);
+  const [currentStreamingMessage, setCurrentStreamingMessage] = useState<string>("");
   const [needsUserInput, setNeedsUserInput] = useState<boolean>(false);
   const [conversationComplete, setConversationComplete] = useState<boolean>(false);
   const [hasResults, setHasResults] = useState<boolean>(false);
@@ -47,7 +49,16 @@ export const useChat = (): UseChatReturn => {
       case 'conversation':
         try {
           const newHistory = JSON.parse(data) as ChatMessage[];
+          console.log('Received conversation history:', newHistory);
           setConversationHistory(newHistory);
+          
+          // Clear streaming message if we have a new assistant message
+          const lastMessage = newHistory[newHistory.length - 1];
+          console.log('Last message:', lastMessage);
+          if (lastMessage && lastMessage.role === 'assistant') {
+            console.log('Clearing currentStreamingMessage due to new assistant message');
+            setCurrentStreamingMessage("");
+          }
         } catch (e) {
           console.error('Failed to parse conversation history:', e);
         }
@@ -66,10 +77,21 @@ export const useChat = (): UseChatReturn => {
       
       case 'token':
         if (data === 'true') {
+          console.log('Token stream finished');
           setIsStreamFinished(true);
           setIsLoading(false);
         } else {
           const token = data.replaceAll(NEWLINE, "\n");
+          console.log('Received token:', token);
+          
+          // Build up the current streaming message for real-time display
+          setCurrentStreamingMessage((prev) => {
+            const newValue = prev + token;
+            console.log('Updated currentStreamingMessage length:', newValue.length);
+            return newValue;
+          });
+          
+          // Keep output state for backward compatibility
           setOutput((prevOutput) => prevOutput + token);
         }
         break;
@@ -119,10 +141,12 @@ export const useChat = (): UseChatReturn => {
       eventSourceRef.current.close();
     }
     
+    // Note: User message will be added by backend via conversation events
+    
     if (!isFollowUp) {
       setIsStarted(true);
       setOutput("");
-      setConversationHistory([]);
+      setCurrentStreamingMessage("");
       setNeedsUserInput(false);
       setConversationComplete(false);
       setHasResults(false);
@@ -130,6 +154,7 @@ export const useChat = (): UseChatReturn => {
     
     setIsLoading(true);
     setIsStreamFinished(false);
+    setCurrentStreamingMessage(""); // Reset streaming message for new response
 
     try {
       // Make POST request with the query and conversation history
@@ -174,6 +199,7 @@ export const useChat = (): UseChatReturn => {
     setIsStreamFinished(false);
     setIsLoading(false);
     setConversationHistory([]);
+    setCurrentStreamingMessage("");
     setNeedsUserInput(false);
     setConversationComplete(false);
     setHasResults(false);
@@ -186,6 +212,7 @@ export const useChat = (): UseChatReturn => {
     isStreamFinished,
     isLoading,
     conversationHistory,
+    currentStreamingMessage,
     needsUserInput,
     conversationComplete,
     hasResults,
