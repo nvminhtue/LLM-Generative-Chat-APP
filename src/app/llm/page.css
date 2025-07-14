@@ -115,10 +115,73 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.llm-button-quick:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
+  .llm-button-quick:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Conversation Section Styling */
+  .llm-conversation-section {
+    padding: 2rem;
+    border-bottom: 1px solid #e1e5e9;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .llm-conversation-title {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.2rem;
+    color: #333;
+    font-weight: 600;
+  }
+
+  .llm-conversation-history {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  .llm-message {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    position: relative;
+  }
+
+  .llm-message-user {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-left: 2rem;
+    text-align: right;
+  }
+
+  .llm-message-assistant {
+    background: #f8f9fa;
+    color: #333;
+    margin-right: 2rem;
+    border: 1px solid #e1e5e9;
+  }
+
+  .llm-message-content {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+  }
+
+  .llm-message-time {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  /* Follow-up Section Styling */
+  .llm-followup-section {
+    padding: 2rem;
+    border-bottom: 1px solid #e1e5e9;
+    background: rgba(255, 248, 220, 0.5);
+    border-left: 4px solid #ffc107;
+  }
+
+  .llm-followup-form {
+    margin: 0;
+  }
 
 /* Controls Styling */
 .llm-controls {
@@ -341,6 +404,26 @@
   .llm-quick-label {
     color: #a0aec0;
   }
+
+  .llm-conversation-section {
+    background: rgba(45, 55, 72, 0.3);
+    border-color: #4a5568;
+  }
+
+  .llm-conversation-title {
+    color: #e2e8f0;
+  }
+
+  .llm-message-assistant {
+    background: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+  }
+
+  .llm-followup-section {
+    background: rgba(68, 51, 34, 0.5);
+    border-left-color: #d69e2e;
+  }
 }
 
 /* Responsive Design */
@@ -399,6 +482,22 @@
   .llm-button-quick {
     text-align: center;
   }
+
+  .llm-conversation-section, .llm-followup-section {
+    padding: 1.5rem;
+  }
+
+  .llm-conversation-history {
+    max-height: 200px;
+  }
+
+  .llm-message-user {
+    margin-left: 1rem;
+  }
+
+  .llm-message-assistant {
+    margin-right: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -424,6 +523,26 @@
 
   .llm-content {
     padding: 1rem;
+  }
+
+  .llm-conversation-section, .llm-followup-section {
+    padding: 1rem;
+  }
+
+  .llm-conversation-history {
+    max-height: 150px;
+  }
+
+  .llm-message-user {
+    margin-left: 0.5rem;
+  }
+
+  .llm-message-assistant {
+    margin-right: 0.5rem;
+  }
+
+  .llm-message {
+    padding: 0.75rem;
   }
 }
 

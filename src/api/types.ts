@@ -27,10 +27,19 @@ export interface HotelSearchResult {
   searchQuery: HotelSearchQuery;
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
 export interface WorkflowState {
   query: HotelSearchQuery;
   searchResults: HotelSearchResult[];
   cheapestOption?: HotelRoom;
   analysis: string;
   error?: string;
+  conversationHistory: ChatMessage[];
+  needsUserInput?: boolean;
+  conversationComplete?: boolean;
 } 

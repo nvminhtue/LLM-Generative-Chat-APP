@@ -1,4 +1,5 @@
 import { findCheapestHotel } from "../../../api/hotel-workflow";
+import { ChatMessage } from "../../../api/types";
 
 const NEWLINE = "$NEWLINE$";
 
@@ -12,20 +13,35 @@ export const POST = async (request: Request) => {
 
   try {
     const body = await request.json();
-    const userQuery = body.query || "Find me a cheap hotel for tonight";
+    const userQuery = body.query || "Find me a cheap hotel for tomorrow";
+    const conversationHistory: ChatMessage[] = body.conversationHistory || [];
 
     // Start the workflow execution
     (async () => {
       try {
         await writer.write(
-          encoder.encode(`event: token\ndata: 🔍 Processing your hotel search request...${NEWLINE}${NEWLINE}\n\n`)
+          encoder.encode(`event: token\ndata: 🔍 Processing your request...${NEWLINE}${NEWLINE}\n\n`)
         );
 
-        const result = await findCheapestHotel(userQuery);
+        const result = await findCheapestHotel(userQuery, conversationHistory);
+
+        // Send conversation history as metadata
+        await writer.write(
+          encoder.encode(`event: conversation\ndata: ${JSON.stringify(result.conversationHistory)}\n\n`)
+        );
+
+        // Send workflow state as metadata
+        await writer.write(
+          encoder.encode(`event: state\ndata: ${JSON.stringify({ 
+            needsUserInput: result.needsUserInput, 
+            conversationComplete: result.conversationComplete,
+            hasResults: !!result.cheapestOption 
+          })}\n\n`)
+        );
 
         if (result.error) {
           await writer.write(
-            encoder.encode(`event: token\ndata: ❌ Error: ${result.error}${NEWLINE}\n\n`)
+            encoder.encode(`event: token\ndata: ${result.error}${NEWLINE}\n\n`)
           );
         } else {
           // Stream the analysis

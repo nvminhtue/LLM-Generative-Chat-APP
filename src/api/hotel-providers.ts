@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { HotelSearchQuery, HotelSearchResult, HotelRoom } from './types';
 
 // Mock hotel providers - In production, replace with real APIs
