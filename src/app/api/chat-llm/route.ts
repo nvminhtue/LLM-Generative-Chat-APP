@@ -20,7 +20,7 @@ export const POST = async (request: Request) => {
     (async () => {
       try {
         await writer.write(
-          encoder.encode(`event: token\ndata: 🔍 Processing your request...${NEWLINE}${NEWLINE}\n\n`)
+          encoder.encode(`event: token\ndata: ${NEWLINE}${NEWLINE}\n\n`)
         );
 
         const result = await findCheapestHotel(userQuery, conversationHistory);

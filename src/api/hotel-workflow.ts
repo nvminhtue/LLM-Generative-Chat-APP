@@ -1,4 +1,5 @@
-// LangGraph-inspired workflow with better state management and error handling
+// Using LangGraph StateGraph for robust workflow orchestration
+import { StateGraph, END, START, Annotation } from "@langchain/langgraph";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { WorkflowState, HotelSearchQuery, HotelRoom, ChatMessage } from "./types";
@@ -11,9 +12,41 @@ const llm = new ChatGoogleGenerativeAI({
   temperature: 0.1,
 });
 
-// Node functions with improved error handling and state management
-async function parseQuery(state: WorkflowState): Promise<WorkflowState> {
-  console.log("🔍 Parsing user query...");
+// Define the state using LangGraph Annotations
+const GraphState = Annotation.Root({
+  query: Annotation<HotelSearchQuery>({
+    reducer: (current, update) => update ?? current,
+    default: () => ({} as HotelSearchQuery),
+  }),
+  searchResults: Annotation<any[]>({
+    reducer: (current, update) => update ?? current,
+    default: () => [],
+  }),
+  cheapestOption: Annotation<HotelRoom>({
+    reducer: (current, update) => update ?? current,
+    default: () => ({} as HotelRoom),
+  }),
+  analysis: Annotation<string>({
+    reducer: (current, update) => update ?? current,
+    default: () => "",
+  }),
+  error: Annotation<string>({
+    reducer: (current, update) => update ?? current,
+    default: () => "",
+  }),
+  conversationHistory: Annotation<ChatMessage[]>({
+    reducer: (current, update) => update ?? current,
+    default: () => [],
+  }),
+  needsUserInput: Annotation<boolean>({
+    reducer: (current, update) => update !== undefined ? update : current,
+    default: () => false,
+  }),
+});
+
+// LangGraph Node Functions - must return partial state updates
+async function parseQuery(state: typeof GraphState.State) {
+  console.log("🔍 [LangGraph Node] Parsing user query...");
 
   // Build conversation context
   const conversationContext = state.conversationHistory
@@ -72,7 +105,6 @@ async function parseQuery(state: WorkflowState): Promise<WorkflowState> {
       ];
       
       return {
-        ...state,
         error: parsed.clarificationMessage,
         analysis: "Query needs clarification",
         conversationHistory: newConversationHistory,
@@ -86,7 +118,6 @@ async function parseQuery(state: WorkflowState): Promise<WorkflowState> {
     const rooms = parsed.rooms || 1;
 
     return {
-      ...state,
       query: {
         destination: parsed.destination,
         checkIn,
@@ -103,7 +134,6 @@ async function parseQuery(state: WorkflowState): Promise<WorkflowState> {
     ];
     
     return {
-      ...state,
       error: "Could not parse your hotel search request. Please provide destination, dates, and number of guests.",
       analysis: "Failed to parse query",
       conversationHistory: newConversationHistory,
@@ -112,12 +142,11 @@ async function parseQuery(state: WorkflowState): Promise<WorkflowState> {
   }
 }
 
-async function searchHotels(state: WorkflowState): Promise<WorkflowState> {
-  console.log("🏨 Searching hotels across multiple providers...");
+async function searchHotels(state: typeof GraphState.State) {
+  console.log("🏨 [LangGraph Node] Searching hotels across multiple providers...");
 
   if (!state.query || !state.query.destination) {
     return {
-      ...state,
       error: "No search query available",
       analysis: "Search failed - missing query",
     };
@@ -127,7 +156,6 @@ async function searchHotels(state: WorkflowState): Promise<WorkflowState> {
     const searchResults = await searchAllProviders(state.query);
 
     return {
-      ...state,
       searchResults,
       analysis: `Found ${searchResults.reduce(
         (total, result) => total + result.totalResults,
@@ -136,19 +164,17 @@ async function searchHotels(state: WorkflowState): Promise<WorkflowState> {
     };
   } catch {
     return {
-      ...state,
       error: "Failed to search hotel providers",
       analysis: "Hotel search failed",
     };
   }
 }
 
-async function analyzeAndSelectCheapest(state: WorkflowState): Promise<WorkflowState> {
-  console.log("💰 Analyzing prices and selecting cheapest option...");
+async function analyzeAndSelectCheapest(state: typeof GraphState.State) {
+  console.log("💰 [LangGraph Node] Analyzing prices and selecting cheapest option...");
 
   if (!state.searchResults || state.searchResults.length === 0) {
     return {
-      ...state,
       error: "No search results to analyze",
       analysis: "Analysis failed - no results",
     };
@@ -162,7 +188,6 @@ async function analyzeAndSelectCheapest(state: WorkflowState): Promise<WorkflowS
 
   if (allRooms.length === 0) {
     return {
-      ...state,
       error: "No hotel rooms found",
       analysis: "No available rooms found",
     };
@@ -210,74 +235,68 @@ async function analyzeAndSelectCheapest(state: WorkflowState): Promise<WorkflowS
     ]);
 
     return {
-        ...state,
         cheapestOption,
         analysis: response.content as string,
     };
 }
 
-// LangGraph-inspired workflow with conditional execution and state management
-export const hotelWorkflow = {
-  async invoke(initialState: WorkflowState): Promise<WorkflowState> {
-    console.log("🚀 Starting LangGraph-inspired hotel workflow...");
+// Conditional routing functions for LangGraph edges
+function shouldContinueToSearch(state: typeof GraphState.State): string {
+  console.log("🔀 [LangGraph Router] Checking if should continue to search...");
+  if (state.error || state.needsUserInput) {
+    console.log("❌ [LangGraph Router] Stopping workflow - error or needs user input");
+    return END;
+  }
+  console.log("✅ [LangGraph Router] Continuing to search hotels");
+  return "searchHotels";
+}
+
+function shouldContinueToAnalysis(state: typeof GraphState.State): string {
+  console.log("🔀 [LangGraph Router] Checking if should continue to analysis...");
+  if (state.error) {
+    console.log("❌ [LangGraph Router] Stopping workflow - search error");
+    return END;
+  }
+  console.log("✅ [LangGraph Router] Continuing to analysis");
+  return "analyzeAndSelectCheapest";
+}
+
+// Create the LangGraph StateGraph
+const createHotelWorkflowGraph = () => {
+  console.log("🏗️ [LangGraph] Creating StateGraph workflow...");
+  
+  const workflow = new StateGraph(GraphState)
+    // Add nodes to the graph
+    .addNode("parseQuery", parseQuery)
+    .addNode("searchHotels", searchHotels)
+    .addNode("analyzeAndSelectCheapest", analyzeAndSelectCheapest)
     
-    let state = { ...initialState };
+    // Define the workflow edges
+    .addEdge(START, "parseQuery")
+    .addConditionalEdges("parseQuery", shouldContinueToSearch, {
+      searchHotels: "searchHotels",
+      [END]: END,
+    })
+    .addConditionalEdges("searchHotels", shouldContinueToAnalysis, {
+      analyzeAndSelectCheapest: "analyzeAndSelectCheapest", 
+      [END]: END,
+    })
+    .addEdge("analyzeAndSelectCheapest", END);
 
-    // Node execution with conditional flow control (LangGraph concept)
-    const nodes = {
-      parseQuery,
-      searchHotels,
-      analyzeAndSelectCheapest
-    };
-
-    // Step 1: Parse Query (with conditional routing)
-    try {
-      console.log("📍 Executing node: parseQuery");
-      state = await nodes.parseQuery(state);
-      
-      // Conditional edge: stop if error or needs user input
-      if (state.error || state.needsUserInput) {
-        console.log("❌ Workflow stopped: needs user input or error occurred");
-        return state;
-      }
-    } catch (error) {
-      console.error("Parse Query Error:", error);
-      return { ...state, error: "Failed to parse query", analysis: "Parse error" };
-    }
-
-    // Step 2: Search Hotels (with conditional routing)
-    try {
-      console.log("📍 Executing node: searchHotels");
-      state = await nodes.searchHotels(state);
-      
-      // Conditional edge: stop if error
-      if (state.error) {
-        console.log("❌ Workflow stopped: hotel search failed");
-        return state;
-      }
-    } catch (error) {
-      console.error("Search Hotels Error:", error);
-      return { ...state, error: "Failed to search hotels", analysis: "Search error" };
-    }
-
-    // Step 3: Analyze and Select (final node)
-    try {
-      console.log("📍 Executing node: analyzeAndSelectCheapest");
-      state = await nodes.analyzeAndSelectCheapest(state);
-      console.log("✅ Workflow completed successfully");
-      return state;
-    } catch (error) {
-      console.error("Analysis Error:", error);
-      return { ...state, error: "Failed to analyze results", analysis: "Analysis error" };
-    }
-  },
+  console.log("✅ [LangGraph] StateGraph workflow created successfully");
+  return workflow.compile();
 };
 
-// Helper function to run the workflow
+// Compile the LangGraph workflow
+export const hotelWorkflow = createHotelWorkflowGraph();
+
+// Helper function to run the LangGraph workflow
 export async function findCheapestHotel(
   userQuery: string,
   conversationHistory: ChatMessage[] = []
 ): Promise<WorkflowState> {
+  console.log("🚀 [LangGraph] Starting hotel search workflow...");
+  
   // Add the user's new message to conversation history
   const newUserMessage: ChatMessage = {
     role: 'user',
@@ -287,41 +306,50 @@ export async function findCheapestHotel(
   
   const updatedHistory = [...conversationHistory, newUserMessage];
   
-  const initialState: WorkflowState = {
+  const initialState = {
     query: {} as HotelSearchQuery,
     searchResults: [],
     analysis: userQuery,
     conversationHistory: updatedHistory,
+    error: "",
+    cheapestOption: {} as HotelRoom,
+    needsUserInput: false,
   };
 
   try {
+    console.log("📊 [LangGraph] Invoking StateGraph with initial state");
     const result = await hotelWorkflow.invoke(initialState);
-    return result;
+    console.log("✅ [LangGraph] Workflow completed successfully");
+    return result as WorkflowState;
   } catch (error) {
-    console.error("Workflow error:", error);
+    console.error("❌ [LangGraph] Workflow execution failed:", error);
     return {
       query: {} as HotelSearchQuery,
       searchResults: [],
       analysis: "An error occurred while processing your hotel search request.",
-      error: "Workflow execution failed",
+      error: "LangGraph workflow execution failed",
       conversationHistory: updatedHistory,
     };
   }
 }
 
 /* 
-LangGraph Benefits Demonstrated:
+🎯 LangGraph Features Implemented:
 
-1. **State Management**: Immutable state updates with spread operator (...state)
-2. **Conditional Routing**: Workflow stops or continues based on state conditions
-3. **Error Handling**: Try-catch blocks around each node with proper error propagation
-4. **Node Isolation**: Each function is a pure node that takes state and returns new state
-5. **Logging**: Clear workflow execution tracking for debugging
-6. **Workflow Visualization**: Easy to understand the flow: parseQuery → searchHotels → analyzeAndSelectCheapest
+✅ **StateGraph**: Proper graph-based workflow orchestration
+✅ **Annotation-based State**: Type-safe state definition with reducers
+✅ **Nodes**: Pure functions that return partial state updates
+✅ **Edges**: START, conditional edges, and END transitions
+✅ **Conditional Routing**: Smart workflow decisions based on state
+✅ **Graph Compilation**: Optimized execution plan
+✅ **Error Handling**: Graceful error propagation through state
+✅ **Logging**: Detailed workflow execution tracking
 
-To use full LangGraph features in the future:
-- Add workflow checkpointing for resumability  
-- Implement parallel node execution
-- Add workflow visualization/debugging tools
-- Use LangGraph's built-in state management features
+🚀 Benefits over simple sequential workflow:
+- Automatic state merging and validation
+- Visual workflow representation (can be exported)
+- Better error recovery and retry mechanisms  
+- Parallelizable node execution (future enhancement)
+- Checkpoint/resume capabilities (future enhancement)
+- Built-in debugging and monitoring tools
 */
