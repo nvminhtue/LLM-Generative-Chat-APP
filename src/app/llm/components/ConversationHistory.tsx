@@ -1,5 +1,5 @@
 import React from "react";
-import { ChatMessage } from "../../../api/types";
+import { ChatMessage } from "@/api/types";
 import {
   codeBlockLookBack,
   findCompleteCodeBlock,
@@ -21,7 +21,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   conversationHistory,
   currentStreamingMessage,
   isStreamFinished,
-  needsUserInput,
+  // needsUserInput,
 }) => {
   if (conversationHistory.length === 0 && !currentStreamingMessage) {
     return null;
@@ -31,29 +31,39 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     <div className="llm-conversation-section">
       <h3 className="llm-conversation-title">💬 Conversation</h3>
       <div className="llm-conversation-history">
-        {conversationHistory.map((message, index) => (
-          <div
-            key={`message-${index}-${message.role}`}
-            className={`llm-message llm-message-${message.role}`}
-          >
-            <div className="llm-message-content">
-              {message.role === "assistant" ? (
-                <AssistantMessageContent
-                  content={message.content}
-                  isStreamFinished={true}
-                />
-              ) : (
-                message.content
-              )}
+        {conversationHistory.map((message, index) => {
+          if (
+            index === conversationHistory.length - 1 &&
+            message.role === "assistant" &&
+            isStreamFinished
+          ) {
+            return null;
+          }
+
+          return (
+            <div
+              key={`message-${index}-${message.role}`}
+              className={`llm-message llm-message-${message.role}`}
+            >
+              <div className="llm-message-content">
+                {message.role === "assistant" ? (
+                  <AssistantMessageContent
+                    content={message.content}
+                    isStreamFinished={true}
+                  />
+                ) : (
+                  message.content
+                )}
+              </div>
+              <div className="llm-message-time">
+                {new Date(message.timestamp).toLocaleTimeString()}
+              </div>
             </div>
-            <div className="llm-message-time">
-              {new Date(message.timestamp).toLocaleTimeString()}
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Show current streaming message */}
-        {currentStreamingMessage && !needsUserInput && (
+        {currentStreamingMessage && (
           <div className="llm-message llm-message-assistant llm-streaming-message">
             <div className="llm-message-content">
               <AssistantMessageContent
@@ -99,17 +109,17 @@ const AssistantMessageContent: React.FC<AssistantMessageContentProps> = ({
     ],
     isStreamFinished,
   });
-  
-    return (
-      <div className="llm-assistant-content">
-        {blockMatches.map((blockMatch, index) => {
-          const Component = blockMatch.block.component;
-          return (
-            <div key={index} className="llm-block">
-              <Component blockMatch={blockMatch} />
-            </div>
-          );
-        })}
-      </div>
-    );
+
+  return (
+    <div className="llm-assistant-content">
+      {blockMatches.map((blockMatch, index) => {
+        const Component = blockMatch.block.component;
+        return (
+          <div key={index} className="llm-block">
+            <Component blockMatch={blockMatch} />
+          </div>
+        );
+      })}
+    </div>
+  );
 };
