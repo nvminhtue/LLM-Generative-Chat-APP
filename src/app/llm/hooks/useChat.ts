@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ChatMessage } from "@/api/chat-llm/types";
+import { ChatMessage } from "@/api/types";
 import { NEWLINE, DEFAULT_QUERY, MESSAGES } from "../constants";
 
 interface ChatState {

@@ -1,0 +1,21 @@
+id,hotelName,roomType,price,currency,description,amenities,provider,rating,location,availability
+booking-1,Grand Plaza Hotel,Standard Room,120,USD,Comfortable room with city view,Free WiFi;Air Conditioning;Mini Bar,Booking.com,4.2,New York,true
+booking-2,Luxury Resort & Spa,Deluxe Suite,280,USD,Luxurious suite with ocean view,Free WiFi;Spa Access;Ocean View;Balcony,Booking.com,4.8,Miami,true
+expedia-1,Business Inn,Executive Room,95,USD,Modern room perfect for business travelers,Free WiFi;Business Center;Gym,Expedia,4.0,San Francisco,true
+expedia-2,Boutique Hotel Downtown,Premium Room,150,USD,Stylish room in the heart of downtown,Free WiFi;Rooftop Bar;Concierge,Expedia,4.5,Chicago,true
+hotels-1,Budget Stay,Economy Room,75,USD,Clean and affordable accommodation,Free WiFi;Parking,Hotels.com,3.8,Orlando,true
+hotels-2,Family Resort,Family Suite,200,USD,Spacious suite perfect for families,Free WiFi;Pool;Kids Club;Restaurant,Hotels.com,4.3,Los Angeles,true
+booking-3,City Center Hotel,Superior Room,130,USD,Spacious room with modern amenities,Free WiFi;Breakfast Included;Gym,Booking.com,4.1,Boston,true
+booking-4,Seaside Escape,Oceanfront Room,220,USD,Room with direct beach access,Free WiFi;Beach Access;Balcony,Booking.com,4.6,San Diego,true
+expedia-3,Mountain Lodge,Chalet Room,180,USD,Cozy chalet with mountain views,Free WiFi;Fireplace;Hot Tub,Expedia,4.7,Denver,true
+expedia-4,Urban Suites,Studio Suite,160,USD,Modern suite in city center,Free WiFi;Kitchenette;Laundry,Expedia,4.3,Seattle,true
+hotels-3,Airport Hotel,Standard Twin,110,USD,Convenient for travelers,Free WiFi;Shuttle Service;Breakfast,Hotels.com,4.0,Atlanta,true
+hotels-4,Historic Inn,Classic Room,140,USD,Charming room in historic building,Free WiFi;Antique Decor;Breakfast,Hotels.com,4.4,Philadelphia,true
+booking-5,Island Retreat,Bungalow,250,USD,Private bungalow on the beach,Free WiFi;Private Pool;Ocean View,Booking.com,4.9,Honolulu,true
+booking-6,City Loft,Loft Room,145,USD,Trendy loft in downtown,Free WiFi;Kitchen;Washer,Booking.com,4.2,Portland,true
+expedia-5,Country House,Deluxe King,170,USD,Spacious room with countryside view,Free WiFi;Garden;Breakfast,Expedia,4.5,Austin,true
+expedia-6,Resort Villas,Villa Suite,300,USD,Luxury villa with private garden,Free WiFi;Private Garden;Jacuzzi,Expedia,4.9,Phoenix,true
+hotels-5,Metro Hotel,Single Room,85,USD,Affordable single room,Free WiFi;Desk,Hotels.com,3.7,Detroit,true
+hotels-6,Parkside Hotel,Park View Room,125,USD,Room with park view,Free WiFi;Balcony;Breakfast,Hotels.com,4.1,Minneapolis,true
+booking-7,Harbor Hotel,Suite,210,USD,Suite with harbor view,Free WiFi;Harbor View;Mini Bar,Booking.com,4.5,Baltimore,true
+expedia-7,Desert Oasis,King Suite,195,USD,Spacious suite in desert resort,Free WiFi;Pool;Spa,Expedia,4.6,Las Vegas,true 
